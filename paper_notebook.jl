@@ -1375,14 +1375,14 @@ begin
 	    append!(power_yearly_scaled, mean(scaled_linearmodel.(eachrow(wave))))
 	end
 	power_mean_scaled = mean(power_yearly_scaled)
-	println("Average scaled annual power: $power_mean_scaled")
+	# println("Average scaled annual power: $power_mean_scaled")
 
 	# mean distribution
 	Norm_samples = Normal(ustrip(mean(power_yearly_scaled)), ustrip(std(power_yearly_scaled)))
 	scaled_Norm_mean = Normal(ustrip(mean(power_yearly_scaled)), std(ustrip.(power_yearly_scaled))/√nyears)
 	scaled_CI_min, scaled_CI_max = norm_ppf2(scaled_Norm_mean)
 	scaled_CI_delta = ((scaled_CI_max - scaled_CI_min)/2)u"W"
-	println("Average annual power: $(roundedUnitful(power_mean_scaled)) +/- $(roundedUnitful(CI_delta)) (95% CI))")
+	# println("Average annual power: $(roundedUnitful(power_mean_scaled)) +/- $(roundedUnitful(CI_delta)) (95% CI))")
 	
 	# #Ground Truth
 	# power_delta = CI_delta#108.11542037210347u"kg*m^2*s^-3"
@@ -1395,6 +1395,7 @@ begin
 	# println("Average annual power (all): $(roundedUnitful(power_mean_all)) ")
 	# pdiff = ((power_mean_all - power_mean_scaled) / power_mean_scaled)
 	# println("percent diff: $(roundedUnitful(abs(pdiff*100)))%")
+	nothing
 end
 
 # ╔═╡ 8cd01eca-b54c-490f-942c-83e5ab752b34
@@ -1934,6 +1935,7 @@ begin
 	PM_right_errors = (PM_pl .- GT_pl) * 3600 / 1000
 	Ma_right_errors = (M_pl .- GT_pl) * 3600 / 1000
 	AE_right_errors = (AE_pl .- GT_pl) * 3600 / 1000
+	nothing
 end
 
 # ╔═╡ 0f3b2065-832a-4abf-bc35-4fb4a3ba4a93
