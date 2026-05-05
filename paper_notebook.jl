@@ -1444,12 +1444,6 @@ begin
 	nothing
 end
 
-# ╔═╡ fb5838e9-4502-4391-88e2-5133f6f37d5d
-mean(GT_p∞)
-
-# ╔═╡ ef2b8046-b421-460a-8eb3-129e1140d0a5
-power_mean_scaled
-
 # ╔═╡ e951539e-d3ca-4f36-8f61-28b752a15633
 let	
 	baseline_bin_stats = [bins_small, bin_powers[begin:length(bins_small)]]
@@ -1670,115 +1664,6 @@ function _plot_bin_errors(data, spectra_data;
 	f1, f2
 end
 
-# ╔═╡ 9fd403c0-81ca-4bc4-b1b8-584f354fb953
-function _plot_bin_contour_weights(data, spectra_data; 
-						  bins=16, α = 1/5, truth=power_mean_scaled,
-						  linearmodel= WaveBot.average_power(WaveBot.thevenin_equivalent("./data/bem_scaled_waves"; freq_wave=n_freq)),
-						  target_size = (line_width*0.7, line_width*0.7*0.75), colorrange=(-2, 1.75))
-	
-	(centers, edges), (weights, _) = ExtraFunctions.bins(data, [bins for _ in 1:length(data)])
-	# println(edges)
-	center_idx = reduce(hcat, [t...] for t in collect(centers))
-	x_bins = collect(edges[1])
-	y_bins = collect(edges[2])
-
-	function get_bound_axis(val, bins)
-		upper_idx = findfirst(val .< bins)
-		return bins[upper_idx - 1:upper_idx]
-	end
-	h_bounds = get_bound_axis.(center_idx[1, :], [x_bins for _ in 1:bins^2])
-	v_bounds = get_bound_axis.(center_idx[2, :], [y_bins for _ in 1:bins^2])
-
-	filter(data, h_bound, v_bound) = (data[1] .>= h_bound[1] .&& data[1] .< h_bound[2]) .&& (data[2] .>= v_bound[1] .&& data[2] .< v_bound[2])
-	bin_filter = [filter(data, h[1], v[1]) for (h, v) in zip(eachrow(h_bounds), eachrow(v_bounds))]
-
-	bin_count_mat = Array{Float64}(undef, bins, bins)
-	
-	for i in 1:bins^2
-		bf = sum(bin_filter[i])
-		bin_count_mat[i] = (bf != 0) ? bf/length(data[1])*100 : NaN
-	end
-
-	figsize = target_size .* (inToPt/pt_per_unit)
-	f1, ax1 = plot_ind_bin_errors(bin_count_mat, center_idx; 
-								 bins, target_size, colorrange=(0, 3.0))
-
-	# Colorbar(f2[:, end+1], hm)
-	
-	f1
-end
-
-# ╔═╡ 0de11b26-83a9-4dbc-9b38-8f57c56dff06
-# let
-# 	α = 1/5
-# 	width=0.6
-# 	target_size = (text_width*width, text_width*width*0.75)
-# 	te_hs_vector = [ustrip.(te_vector)*α, ustrip.(hs_vector*α^2)]
-	
-# 	f1, f2 = _plot_bin_errors(te_hs_vector, [pm_spectra, ma_spectra, AE_spectra]; bins=32, α, target_size)
-# 	save("./data/figures/figure12a.pdf", f1; pt_per_unit)
-# 	save("./data/figures/figure12b.pdf", f2; pt_per_unit)
-	
-# 	md"""
-# 	#### Figure 12a
-# 	$(f1)\
-	
-# 	#### Figure 12b
-# 	$(f2)
-# 	"""
-# end
-
-# ╔═╡ 69071870-90ce-4b5d-815d-f9998c611eef
-# let
-# 	α = 1/5
-# 	width=0.4
-# 	target_size = (text_width*width, text_width*width*2)
-# 	te_hs_vector = [ustrip.(te_vector)*α, ustrip.(hs_vector*α^2)]
-
-# 	f1 = _plot_bin_contour(te_hs_vector, [pm_spectra, ma_spectra, AE_spectra]; bins=32, α, target_size)
-# 	save("./data/figures/figure12a.pdf", f1; pt_per_unit)
-	
-# 	md"""
-# 	#### Figure 12a
-# 	$(f1)\
-
-# 	"""
-# end
-
-# ╔═╡ 596d8f55-75bd-4ba6-a70c-b3d6dd739457
-# let
-# 	α = 1/5
-# 	width=0.4
-# 	target_size = (text_width*width, text_width*width*2)
-# 	te_hs_vector = [ustrip.(te_vector)*α, ustrip.(hs_vector*α^2)]
-
-# 	f1 = _plot_bin_contour_prop(te_hs_vector, [pm_spectra, ma_spectra, AE_spectra]; bins=32, α, target_size)
-# 	save("./data/figures/figure12b.pdf", f1; pt_per_unit)
-	
-# 	md"""
-# 	#### Figure 12b
-# 	$(f1)\
-
-# 	"""
-# end
-
-# ╔═╡ 0fa16704-9e05-494c-b6db-d9f41a59326c
-# let
-# 	α = 1/5
-# 	width=0.6
-# 	target_size = (text_width*width, text_width*width*0.75)
-# 	te_hs_vector = [ustrip.(te_vector)*α, ustrip.(hs_vector*α^2)]
-
-# 	f1 = _plot_bin_contour_weights(te_hs_vector, [pm_spectra, ma_spectra, AE_spectra]; bins=32, α, target_size)
-# 	save("./data/figures/figure12c.pdf", f1; pt_per_unit)
-	
-# 	md"""
-# 	#### Figure 12c
-# 	$(f1)\
-
-# 	"""
-# end
-
 # ╔═╡ d1980d03-67d2-483c-98c3-a68c1f0fd15b
 begin
 	power_list(spectra_iter) = [uconvert(u"W", scaled_linearmodel(Waves.wave_amplitudes(spectrum, n_freq))) for spectrum in spectra_iter]
@@ -1837,9 +1722,12 @@ function _plot_bin_errors_testing_left(data, spectra_data;
 	alpha=0.5
 	color_max = maximum([maximum(abs.(PM_left_err)), maximum(abs.(M_left_err)), maximum(abs.(AE_left_err))])
 
-	println("PM: $(minimum(PM_left_err)) - $(maximum(PM_left_err))")
-	println("M: $(minimum(M_left_err)) - $(maximum(M_left_err))")
-	println("AE: $(minimum(AE_left_err)) - $(maximum(AE_left_err))")
+	# println("PM: $(minimum(PM_left_err)) - $(maximum(PM_left_err))")
+	# println("M: $(minimum(M_left_err)) - $(maximum(M_left_err))")
+	# println("AE: $(minimum(AE_left_err)) - $(maximum(AE_left_err))")
+	errs = [[minimum(PM_left_err), maximum(PM_left_err)];
+		   [minimum(M_left_err), maximum(M_left_err)];
+		   [minimum(AE_left_err), maximum(AE_left_err)];]
 	# println()
 	# println(maximum(M_err))
 	# println(maximum(AE_err))
@@ -1879,7 +1767,7 @@ function _plot_bin_errors_testing_left(data, spectra_data;
 
 	rowgap!(f.layout, 10)
 	
-	f
+	f, errs
 end
 
 # ╔═╡ bb26f5b5-1dfe-4787-9c19-5432faf33df3
@@ -1945,9 +1833,12 @@ function _plot_bin_errors_testing_right(data, spectra_data;
 	alpha=0.5
 	color_max = maximum([maximum(abs.(PM_right_err)), maximum(abs.(M_right_err)), maximum(abs.(AE_right_err))])
 
-	println("PM: $(minimum(PM_right_err)) - $(maximum(PM_right_err))")
-	println("M: $(minimum(M_right_err)) - $(maximum(M_right_err))")
-	println("AE: $(minimum(AE_right_err)) - $(maximum(AE_right_err))")
+	# println("PM: $(minimum(PM_right_err)) - $(maximum(PM_right_err))")
+	# println("M: $(minimum(M_right_err)) - $(maximum(M_right_err))")
+	# println("AE: $(minimum(AE_right_err)) - $(maximum(AE_right_err))")
+	errs = [[minimum(PM_right_err), maximum(PM_right_err)];
+		   [minimum(M_right_err), maximum(M_right_err)];
+		   [minimum(AE_right_err), maximum(AE_right_err)];]
 	# println(maximum(PM_right_err))
 	# println(maximum(M_err))
 	# println(maximum(AE_err))
@@ -1987,7 +1878,7 @@ function _plot_bin_errors_testing_right(data, spectra_data;
 
 	rowgap!(f.layout, 10)
 	
-	f
+	f, errs
 end
 
 # ╔═╡ 30b14504-4eb9-4d1b-8ac7-f6fcbf7d387e
@@ -1997,216 +1888,36 @@ let
 	target_size = (line_width*width, line_width*width*2.5)
 	te_hs_vector = [ustrip.(te_vector)*α, ustrip.(hs_vector*α^2)]
 	
-	f1 = _plot_bin_errors_testing_left(te_hs_vector, [pm_spectra, ma_spectra, AE_spectra]; bins=32, α, target_size)
-	f2 = _plot_bin_errors_testing_right(te_hs_vector, [pm_spectra, ma_spectra, AE_spectra]; bins=32, α, target_size)
+	f1, e1 = _plot_bin_errors_testing_left(te_hs_vector, [pm_spectra, ma_spectra, AE_spectra]; bins=32, α, target_size)
+	f2, e2 = _plot_bin_errors_testing_right(te_hs_vector, [pm_spectra, ma_spectra, AE_spectra]; bins=32, α, target_size)
 	save("./data/figures/figure12a.pdf", f1; pt_per_unit)
 	save("./data/figures/figure12b.pdf", f2; pt_per_unit)
-	
+
 	md"""
 	#### Figure 12a
 	$(f1)
+
+	The relative error expressed as a percentage ranges from the following lowest value to highest value
+
+	Pierson-Moskowitz = $(roundedValue(e1[1])) to $(roundedValue(e1[2]))
+	
+	Mackay = $(roundedValue(e1[3])) to $(roundedValue(e1[4]))
+
+	Autoencoder = $(roundedValue(e1[5])) to $(roundedValue(e1[6]))
+	
 	
 	#### Figure 12b
 	$(f2)
+
+	The error in energy production (kilojoules) ranges from the following lowest value to highest value
+
+	Pierson-Moskowitz = $(roundedValue(e2[1])) to $(roundedValue(e2[2]))
+	
+	Mackay = $(roundedValue(e2[3])) to $(roundedValue(e2[4]))
+
+	Autoencoder = $(roundedValue(e2[5])) to $(roundedValue(e2[6]))
 	"""
 end
-
-# ╔═╡ d491f4b8-6b3e-4866-851d-9b93330ef669
-function _plot_bin_contour(data, spectra_data; 
-						  bins=16, α = 1/5, truth=power_mean_scaled,
-						  linearmodel= WaveBot.average_power(WaveBot.thevenin_equivalent("./data/bem_scaled_waves"; freq_wave=n_freq)),
-						  target_size = (line_width*0.7, line_width*0.7*0.75), colorrange=(-0.75, 0.75))
-	
-	scaled_original = filtered_spectra*α^5
-	GT_pl = power_list(eachrow(scaled_original))
-	PM_pl = power_list(eachcol(spectra_data[1]))
-	M_pl = power_list(eachcol(spectra_data[2]))
-	AE_pl = power_list(eachcol(spectra_data[3].*u"m^2/Hz"))
-
-	PM_err = @. (PM_pl - GT_pl) / GT_pl
-	M_err = @. (M_pl - GT_pl) / GT_pl
-	AE_err = @. (AE_pl - GT_pl) / GT_pl
-
-	println("$(pm_label) Max PM Error: $(maximum(PM_err))")
-	println("$(ma_label) Max Mackay Error: $(maximum(M_err))")
-	println("$(ae_label) Max Autoencoder Error: $(maximum(AE_err))")
-	println("$(pm_label) Min PM Error: $(minimum(PM_err))")
-	println("$(ma_label) Min Mackay Error: $(minimum(M_err))")
-	println("$(ae_label) Min Autoencoder Error: $(minimum(AE_err))")
-
-	xs, ys = data
-	figsize = target_size .* (inToPt/pt_per_unit)
-	
-	f = Figure(
-		size = figsize
-	)
-	
-	ax1 = CairoMakie.Axis(f[1,1],
-		# xlabel = L"Energy Period $(s)$",
-		ylabel = L"Significant Waveheight $(m)$",
-		title="$(pm_label)",
-		xticksvisible=false, xticklabelsvisible=false;
-		ax_kwargs...,
-	)
-	
-	ax2 = CairoMakie.Axis(f[2,1],
-		ylabel = L"Significiant Waveheight $(m)$",
-		title="$(ma_label)",
-		xticksvisible=false, xticklabelsvisible=false;
-		ax_kwargs...,
-	)
-	ax3 = CairoMakie.Axis(f[3,1],
-		xlabel = L"Energy Period $(s)$",
-		ylabel = L"Significiant Waveheight $(m)$",
-		title="$(ae_label)";
-		ax_kwargs...,
-	)
-
-	hm = tricontourf!(ax1, 
-		xs, ys, ustrip.(PM_err), 
-		colormap=:RdBu, levels=colorrange[1]:0.1:colorrange[2], rasterize=2)
-	hm = tricontourf!(ax2, 
-				  xs, ys, ustrip.(M_err), 
-				  colormap=:RdBu, levels=colorrange[1]:0.1:colorrange[2], rasterize=2)
-	hm = tricontourf!(ax3, 
-				  xs, ys, ustrip.(AE_err), 
-				  colormap=:RdBu, levels=colorrange[1]:0.1:colorrange[2], rasterize=2)
-	
-	Colorbar(f[:, end+1], hm)
-	
-	f
-end
-
-# ╔═╡ 99068c0d-34ea-4972-9611-52a39d17e29a
-function _plot_bin_contour_prop(data, spectra_data; 
-						  bins=16, α = 1/5, truth=power_mean_scaled,
-						  linearmodel= WaveBot.average_power(WaveBot.thevenin_equivalent("./data/bem_scaled_waves"; freq_wave=n_freq)),
-						  target_size = (line_width*0.7, line_width*0.7*0.75), colorrange=(-2, 1.75))
-	
-	scaled_original = filtered_spectra*α^5
-	GT_pl = power_list(eachrow(scaled_original))
-	PM_pl = power_list(eachcol(spectra_data[1]))
-	M_pl = power_list(eachcol(spectra_data[2]))
-	AE_pl = power_list(eachcol(spectra_data[3].*u"m^2/Hz"))
-
-	PM_err = @. (PM_pl - GT_pl) / power_mean_scaled
-	M_err = @. (M_pl - GT_pl) / power_mean_scaled
-	AE_err = @. (AE_pl - GT_pl) / power_mean_scaled
-
-	println("$(pm_label) Max PM Error: $(maximum(PM_err))")
-	println("$(ma_label) Max Mackay Error: $(maximum(M_err))")
-	println("$(ae_label) Max Autoencoder Error: $(maximum(AE_err))")
-	println("$(pm_label) Min PM Error: $(minimum(PM_err))")
-	println("$(ma_label) Min Mackay Error: $(minimum(M_err))")
-	println("$(ae_label) Min Autoencoder Error: $(minimum(AE_err))")
-	
-	xs, ys = data
-	figsize = target_size .* (inToPt/pt_per_unit)
-	
-	f = Figure(
-		size = figsize
-	)
-	
-	ax1 = CairoMakie.Axis(f[1,1],
-		# xlabel = L"Energy Period $(s)$",
-		ylabel = L"Significant Waveheight $(m)$",
-		title="$(pm_label)",
-		xticksvisible=false, xticklabelsvisible=false;
-		ax_kwargs...,
-	)
-	
-	ax2 = CairoMakie.Axis(f[2,1],
-		ylabel = L"Significiant Waveheight $(m)$",
-		title="$(ma_label)",
-		xticksvisible=false, xticklabelsvisible=false;
-		ax_kwargs...,
-	)
-	ax3 = CairoMakie.Axis(f[3,1],
-		xlabel = L"Energy Period $(s)$",
-		ylabel = L"Significiant Waveheight $(m)$",
-		title="$(ae_label)";
-		ax_kwargs...,
-	)
-
-	hm = tricontourf!(ax1, 
-		xs, ys, ustrip.(PM_err), 
-		colormap=:RdBu, levels=colorrange[1]:0.1:colorrange[2], rasterize=2)
-	hm = tricontourf!(ax2, 
-				  xs, ys, ustrip.(M_err), 
-				  colormap=:RdBu, levels=colorrange[1]:0.1:colorrange[2], rasterize=2)
-	hm = tricontourf!(ax3, 
-				  xs, ys, ustrip.(AE_err), 
-				  colormap=:RdBu, levels=colorrange[1]:0.1:colorrange[2], rasterize=2)
-	
-	Colorbar(f[:, end+1], hm)
-	
-	f
-end
-
-# ╔═╡ f7fb07ff-ff34-4502-aa8c-379156a6570c
-# let
-	
-
-# 	width = 0.7
-# 	target_size = (line_width*width, line_width*width*0.75)
-# 	figsize = target_size .* (inToPt/pt_per_unit)
-# 	f = Figure(
-# 		size = figsize,
-		
-# 	)
-# 	ax = CairoMakie.Axis(f[1,1],
-# 		ylabel="Relative Occurence";
-# 		ax_kwargs...,
-# 	)
-# 	xlims!(-5,5)
-# 	# ylims!(1, 100000)
-# 	bins=200
-
-# 	# quickIntegral(Δx, y) = sum((y[begin: end-1] .+ y[begin+1:end] ./ 2) .* Δx)
-# 	PM_hist = normalize(fit(Histogram, PM_errors, nbins=bins);mode=:none)
-# 	y1 = PM_hist.weights
-# 	Ma_hist = normalize(fit(Histogram, Ma_errors, nbins=bins);mode=:none)
-# 	y2 = Ma_hist.weights
-# 	AE_hist = normalize(fit(Histogram, AE_errors, nbins=bins);mode=:none)
-# 	y3 = AE_hist.weights
-
-# 	x1 = (PM_hist.edges[1] .+ step(PM_hist.edges[1])/2)[begin:end-1]
-# 	x2 = (Ma_hist.edges[1] .+ step(Ma_hist.edges[1])/2)[begin:end-1]
-# 	x3 = (AE_hist.edges[1] .+ step(AE_hist.edges[1])/2)[begin:end-1]
-
-# 	# println(length(x1))
-# 	# println(length(x2))
-# 	# println(length(x3))
-# 	# println("PM:", sum(x1 .* y1))
-# 	# println("Ma:", sum(x2 .* y2))
-# 	# println("AE:", sum(x3 .* y3))
-
-# 	linestyles = [(:solid), (:dashdot, :dense), (:dash, :dense)]
-# 	colors = [pm_color, ma_color, ae_color]
-# 	N = sum(y1)
-# 	lines!(ax,
-# 		x1, y1/N, label=pm_label,
-# 		linestyle=linestyles[1], color=colors[1],
-# 	)
-# 	lines!(ax,
-# 		x2, y2/N, label=ma_label,
-# 		   linestyle=linestyles[2], color=colors[2],
-# 	)
-# 	lines!(ax,
-# 		x3, y3/N, label=ae_label, color=colors[3],
-# 		linestyle=linestyles[3]
-# 	)
-# 	axislegend(ax, 
-# 		position=:rt, halign=:right, valign=:top, 
-# 		framewidth=0.5, rowgap = -8, patchlabelgap = 1,
-# 		padding=2
-# 	)
-# 	save("./data/figures/figure13.pdf", f; pt_per_unit)
-# 	md"""
-# 	#### Figure 13
-# 	$f
-# 	"""
-# end
 
 # ╔═╡ f6015f97-2162-45e0-9fd4-3b946a2e2bc5
 begin
@@ -2227,7 +1938,6 @@ end
 
 # ╔═╡ 0f3b2065-832a-4abf-bc35-4fb4a3ba4a93
 let
-
 	width = 0.7
 	target_size = (line_width*width, line_width*width*0.75)
 	figsize = target_size .* (inToPt/pt_per_unit)
@@ -2291,6 +2001,8 @@ let
 	md"""
 	#### Figure 13
 	$f
+
+	Distribution of the relative errors in power estimates for the scaled sea states case, in logarithmic scale
 	"""
 end
 
@@ -2360,6 +2072,8 @@ let
 	md"""
 	#### Figure 14
 	$f
+
+	Distribution of the errors in energy prediction for the scaled sea states case, in logarithmic scale
 	"""
 end
 
@@ -2429,25 +2143,15 @@ end
 # ╟─a8fb78db-ca0d-4e85-b7cd-570bd620abce
 # ╟─7812c0d6-5c50-4523-b66c-e1e104a01af2
 # ╟─68bbb20f-4f70-4884-a4e3-74e8aa80293f
-# ╠═6de702d6-96ad-4b11-a6d9-b32522032712
-# ╠═fb5838e9-4502-4391-88e2-5133f6f37d5d
-# ╠═ef2b8046-b421-460a-8eb3-129e1140d0a5
+# ╟─6de702d6-96ad-4b11-a6d9-b32522032712
 # ╟─e951539e-d3ca-4f36-8f61-28b752a15633
 # ╟─33f59655-6af0-465c-bbfa-b960e3322469
-# ╠═963b3d5a-3593-40ca-9b8a-18380f32328f
-# ╠═bb26f5b5-1dfe-4787-9c19-5432faf33df3
-# ╠═30b14504-4eb9-4d1b-8ac7-f6fcbf7d387e
+# ╟─963b3d5a-3593-40ca-9b8a-18380f32328f
+# ╟─bb26f5b5-1dfe-4787-9c19-5432faf33df3
+# ╟─30b14504-4eb9-4d1b-8ac7-f6fcbf7d387e
 # ╟─f7c4dd98-1b90-440f-8bf6-1d3234c392d7
 # ╟─bd219d3c-ab2d-4d15-83bc-fbb3dfa8efe9
-# ╟─d491f4b8-6b3e-4866-851d-9b93330ef669
-# ╟─99068c0d-34ea-4972-9611-52a39d17e29a
-# ╟─9fd403c0-81ca-4bc4-b1b8-584f354fb953
-# ╟─0de11b26-83a9-4dbc-9b38-8f57c56dff06
-# ╟─69071870-90ce-4b5d-815d-f9998c611eef
-# ╟─596d8f55-75bd-4ba6-a70c-b3d6dd739457
-# ╟─0fa16704-9e05-494c-b6db-d9f41a59326c
 # ╟─d1980d03-67d2-483c-98c3-a68c1f0fd15b
-# ╟─f7fb07ff-ff34-4502-aa8c-379156a6570c
-# ╠═f6015f97-2162-45e0-9fd4-3b946a2e2bc5
+# ╟─f6015f97-2162-45e0-9fd4-3b946a2e2bc5
 # ╟─0f3b2065-832a-4abf-bc35-4fb4a3ba4a93
 # ╟─0f893603-8129-46fb-961a-f200a0d7f8b3
